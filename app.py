@@ -255,5 +255,11 @@ elif mode == "🚨 Duress Protocol (Citizen)":
                 st.warning("Incorrect PIN")
 
 # --- Footer ---
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Network Status:**")
+st.sidebar.markdown("✅ **USSD Gateway (*334#)**: Connected")
+st.sidebar.markdown("✅ **Mobile App API**: Connected")
+st.sidebar.markdown("✅ **Internet Banking**: Connected")
+
 st.markdown("---")
 st.markdown("© 2025 Ulinzi-AI | **National Cyber-Intelligence & Prevention Platform**")
