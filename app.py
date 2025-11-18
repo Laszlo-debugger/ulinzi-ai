@@ -1,211 +1,259 @@
 import streamlit as st
 import time
+import pandas as pd
+import numpy as np
+import pydeck as pdk
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Ulinzi-AI: National Cyber-Intelligence Platform",
+    page_title="Ulinzi-AI | Command Center",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Custom CSS for Styling ---
+# --- Custom CSS ---
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.5rem;
-        color: #1E88E5;
-        text-align: center;
-        font-weight: 700;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #555;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .status-box {
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        margin-bottom: 1rem;
-    }
-    .log-container {
-        background-color: #0e1117;
-        color: #00ff00;
-        padding: 1rem;
-        border-radius: 5px;
-        font-family: 'Courier New', Courier, monospace;
-        height: 400px;
-        overflow-y: auto;
-        border: 1px solid #333;
-    }
+    .main-header {font-size: 2.5rem; color: #1E88E5; text-align: center; font-weight: 800;}
+    .sub-header {font-size: 1.2rem; color: #666; text-align: center; margin-bottom: 2rem;}
+    .metric-card {background-color: #1E1E1E; padding: 1rem; border-radius: 8px; color: white; text-align: center; border: 1px solid #333;}
+    .metric-val {font-size: 2rem; font-weight: bold; color: #4CAF50;}
+    .metric-label {font-size: 0.9rem; color: #aaa;}
+    .stButton>button {width: 100%; border-radius: 5px; font-weight: bold;}
+    .risk-high {color: #ff4b4b; font-weight: bold;}
+    .risk-low {color: #00cc96; font-weight: bold;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- App Header ---
+# --- Session State Init ---
+if 'visual_state' not in st.session_state:
+    st.session_state.visual_state = "secure" # secure, hacked, restoring
+if 'audit_log' not in st.session_state:
+    st.session_state.audit_log = []
+
+# --- Helper Functions ---
+def add_log(event_type, message, status="INFO"):
+    timestamp = time.strftime("%H:%M:%S")
+    st.session_state.audit_log.insert(0, {"time": timestamp, "type": event_type, "msg": message, "status": status})
+
+# --- Header ---
 st.markdown('<div class="main-header">🛡️ Ulinzi-AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">National Autonomous Cyber-Physical Intelligence System</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Autonomous National Cyber-Physical Intelligence Grid</div>', unsafe_allow_html=True)
 
-# --- Sidebar ---
-st.sidebar.header("🕹️ Command Center Controls")
-st.sidebar.info("Select a threat scenario to activate the Autonomous Agent.")
+# --- Sidebar Controls ---
+st.sidebar.header("⚙️ System Parameters")
+st.sidebar.markdown("**Identity:** Sentinel-X Node 01")
+st.sidebar.markdown("**Status:** 🟢 ACTIVE (Zero-Trust Mode)")
 
-scenario = st.sidebar.radio(
-    "Active Threat Scenarios:",
-    (
-        "--- Select Scenario ---",
-        "Scenario 1: The '3 AM' Anomaly (Financial Sentinel)",
-        "Scenario 2: The Duress Protocol (Physical Threat)",
-        "Scenario 3: Sovereign Defacement (Visual Sentinel)"
-    )
-)
+mode = st.sidebar.selectbox("Select Operation Mode", 
+    ["Dashboard Overview", "⚔️ Sovereign Sentinel (Gov)", "💸 Financial Sentinel (Bank)", "🚨 Duress Protocol (Citizen)"])
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**System Status:** 🟢 ONLINE")
-st.sidebar.markdown("**Connected Nodes:**")
-st.sidebar.markdown("- 🏦 KCB Core Banking")
-st.sidebar.markdown("- 🏦 Equity Core Banking")
-st.sidebar.markdown("- 📡 Safaricom Telco API")
-st.sidebar.markdown("- 🏛️ Ministry of Interior Web")
+st.sidebar.divider()
+st.sidebar.info("Tip for Judges: Use the controls in the main window to trigger threats and watch the AI respond autonomously.")
 
-# --- Main Layout ---
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.subheader("🔴 Live Intelligence Log")
-    log_placeholder = st.empty()
+# --- 1. DASHBOARD OVERVIEW ---
+if mode == "Dashboard Overview":
     
-    # Default Empty State
-    if scenario == "--- Select Scenario ---":
-        log_placeholder.info("Waiting for event trigger...")
-
-with col2:
-    st.subheader("🤖 Autonomous Agent Status")
-    agent_status = st.empty()
-    agent_status.info("Status: IDLE (Monitoring)")
-    
-    st.subheader("⚡ Action Impact")
-    impact_status = st.empty()
-    impact_status.warning("No actions taken yet.")
-
-# --- Simulation Logic ---
-
-# SCENARIO 1: FINANCIAL FRAUD
-if scenario == "Scenario 1: The '3 AM' Anomaly (Financial Sentinel)":
-    
-    log_text = ">> [03:01:10] MONITORING TRANSACTION STREAM...\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(1)
-    
-    # Step 1: Event Detection
-    agent_status.info("Status: ANALYZING ANOMALY...")
-    log_text += ">> [03:01:12] EVENT DETECTED: High-Value Withdrawal\n"
-    log_text += "   - User ID:   KE-88291 (Jane Doe)\n"
-    log_text += "   - Amount:    KES 850,000.00\n"
-    log_text += "   - Time:      03:01 AM (High Risk)\n"
-    log_text += "   - Location:  Naivasha (Geo-Anomaly)\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(2)
-
-    # Step 2: AI Analysis
-    log_text += "\n>> [03:01:13] AI RISK ASSESSMENT (Isolation Forest):\n"
-    log_text += "   - ⚠️ Velocity Alert: 150x deviation from 30-day avg.\n"
-    log_text += "   - ⚠️ Telco Signal: SIM Swap detected 4 hours ago.\n"
-    log_text += "   - 🔴 RISK SCORE: 98/100 (CRITICAL FRAUD)\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(2)
-
-    # Step 3: Autonomous Action
-    agent_status.error("Status: ENGAGING CIRCUIT BREAKER")
-    log_text += "\n>> [03:01:14] AUTONOMOUS ACTION TRIGGERED:\n"
-    log_text += "   - 🚫 ACTION: Transaction BLOCKED immediately.\n"
-    log_text += "   - 🔒 ACTION: Account 'KE-88291' Frozen.\n"
-    log_text += "   - 📹 ACTION: Video Liveness Check challenge sent to App.\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(1)
-
-    # Final Impact
-    impact_status.success("💸 FRAUD PREVENTED: KES 850,000 SAVED")
-    st.toast("Threat Neutralized: Financial Anomaly Detected")
-
-
-# SCENARIO 2: DURESS PROTOCOL
-elif scenario == "Scenario 2: The Duress Protocol (Physical Threat)":
-    
-    log_text = ">> [14:15:22] MONITORING USER SESSIONS...\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(1)
-
-    # Step 1: Duress PIN Entry
-    agent_status.info("Status: PROCESSING AUTHENTICATION...")
-    log_text += ">> [14:15:25] AUTH EVENT: User Login\n"
-    log_text += "   - User ID:   KE-44510 (John Kamau)\n"
-    log_text += "   - Input:     PIN ENTRY ****\n"
-    log_text += "   - Analysis:  MATCHES 'DURESS PIN' HASH.\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(2)
-
-    # Step 2: The "Trick" & AI Response
-    agent_status.warning("Status: EXECUTING DURESS PROTOCOL")
-    log_text += "\n>> [14:15:26] DURESS PROTOCOL ACTIVATED:\n"
-    log_text += "   - ✅ FRONTEND: Display 'Transaction Successful' (Deception).\n"
-    log_text += "   - 🚓 BACKEND: Dispatch 'CODE RED' to NPS (Police).\n"
-    log_text += "     -> GPS Lat/Long: -1.2921, 36.8219 (Hurlingham)\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(2)
-
-    # Step 3: The Money Marker
-    log_text += "\n>> [14:15:27] CHAIN ANALYSIS AGENT:\n"
-    log_text += "   - Target:    M-PESA 0722-XXX-XXX (The Kidnapper)\n"
-    log_text += "   - Action:    API Call -> POST /mpesa/freeze_account\n"
-    log_text += "   - Result:    TARGET ACCOUNT FROZEN (Funds Trapped).\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(1)
-
-    # Final Impact
-    impact_status.success("👮 POLICE ALERTED. FUNDS TRAPPED. USER SAFE.")
-    st.toast("Emergency Protocol Executed")
-
-
-# SCENARIO 3: VISUAL SENTINEL
-elif scenario == "Scenario 3: Sovereign Defacement (Visual Sentinel)":
-    
-    log_text = ">> [09:45:00] VISUAL SENTINEL: MONITORING 'statehouse.go.ke'...\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(1)
-
-    # Step 1: The Attack
-    agent_status.info("Status: SCANNING VISUAL STATE...")
-    
-    # Displaying the "Attack" visually
+    # Live Metrics
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.image("https://placehold.co/600x150/red/white?text=HACKED:+MINISTRY+WEBSITE+DEFACED", caption="Simulated Live View: 09:45:05 AM")
+        st.markdown('<div class="metric-card"><div class="metric-val">1.2ms</div><div class="metric-label">Avg Response Latency</div></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="metric-card"><div class="metric-val">42</div><div class="metric-label">Attacks Neutralized (24h)</div></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="metric-card"><div class="metric-val">KES 1.5M</div><div class="metric-label">Fraud Prevented</div></div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="metric-card"><div class="metric-val">100%</div><div class="metric-label">Govt Uptime</div></div>', unsafe_allow_html=True)
 
-    log_text += ">> [09:45:05] ALERT: VISUAL INTEGRITY COMPROMISED!\n"
-    log_text += "   - Diff Score: 15.4% (Threshold: 5%)\n"
-    log_text += "   - Anomaly:    Foreign content/Hate symbols detected.\n"
-    log_placeholder.code(log_text, language="bash")
-    time.sleep(3)
-
-    # Step 2: Autonomous Revert
-    agent_status.error("Status: AUTONOMOUS REVERT INITIATED")
-    log_text += "\n>> [09:45:05.500] AGENT ACTION: HOT-SWAP RESTORE\n"
-    log_text += "   - Command:    kubectl rollout undo deployment/web-frontend\n"
-    log_text += "   - Latency:    450ms response time.\n"
-    log_text += "   - Evidence:   Snapshot stored to Blockchain Ledger.\n"
-    log_placeholder.code(log_text, language="bash")
+    st.divider()
     
-    # Displaying the "Fix" visually
+    # Live Network Map
+    st.subheader("🌍 Real-Time Threat Map (Network Traffic)")
+    
+    # Random data for map visualization
+    map_data = pd.DataFrame(
+        np.random.randn(100, 2) / [50, 50] + [-1.2921, 36.8219],
+        columns=['lat', 'lon'])
+
+    st.pydeck_chart(pdk.Deck(
+        map_style='mapbox://styles/mapbox/dark-v10',
+        initial_view_state=pdk.ViewState(
+            latitude=-1.2921,
+            longitude=36.8219,
+            zoom=11,
+            pitch=50,
+        ),
+        layers=[
+            pdk.Layer(
+                'HexagonLayer',
+                data=map_data,
+                get_position='[lon, lat]',
+                radius=200,
+                elevation_scale=4,
+                elevation_range=[0, 1000],
+                pickable=True,
+                extruded=True,
+            ),
+            pdk.Layer(
+                'ScatterplotLayer',
+                data=map_data,
+                get_position='[lon, lat]',
+                get_color='[200, 30, 0, 160]',
+                get_radius=200,
+            ),
+        ],
+    ))
+    
+    st.caption("Live visualization of IPs accessing Sovereign Infrastructure (Nairobi Node)")
+
+# --- 2. SOVEREIGN VISUAL SENTINEL ---
+elif mode == "⚔️ Sovereign Sentinel (Gov)":
+    st.subheader("🏛️ Ministry Website Integrity Monitor")
+    
+    col_sim, col_log = st.columns([2, 1])
+    
+    with col_sim:
+        st.markdown("### Live Visual State")
+        
+        # Visual State Logic
+        if st.session_state.visual_state == "secure":
+            st.image("https://placehold.co/800x400/2E7D32/FFF?text=MINISTRY+OF+INTERIOR%0AOfficial+Secure+Portal", caption="Status: SECURE (Gold Standard Match)")
+            
+            if st.button("🔴 SIMULATE CYBERATTACK (Inject Defacement)"):
+                st.session_state.visual_state = "hacked"
+                st.rerun()
+
+        elif st.session_state.visual_state == "hacked":
+            st.image("https://placehold.co/800x400/B71C1C/FFF?text=HACKED+BY+ANONYMOUS%0A(Hate+Symbols+Injected)", caption="Status: COMPROMISED (Visual Anomaly Detected)")
+            
+            # Auto-Revert Simulation
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            status_text.error("⚠️ ANOMALY DETECTED! AI AGENT ACTIVATED.")
+            time.sleep(1)
+            for i in range(100):
+                progress_bar.progress(i + 1)
+                time.sleep(0.01)
+            
+            status_text.info("🔄 ROLLING BACK TO SECURE SNAPSHOT...")
+            time.sleep(1)
+            st.session_state.visual_state = "restoring"
+            st.rerun()
+            
+        elif st.session_state.visual_state == "restoring":
+            st.success("✅ REVERT COMPLETE. Site Restored.")
+            st.image("https://placehold.co/800x400/2E7D32/FFF?text=MINISTRY+OF+INTERIOR%0AOfficial+Secure+Portal", caption="Status: RESTORED (Autonomous Action Taken)")
+            if st.button("Reset Simulation"):
+                st.session_state.visual_state = "secure"
+                st.rerun()
+
+    with col_log:
+        st.markdown("### 🧠 Agent Logic Logs")
+        if st.session_state.visual_state == "secure":
+            st.code("""[INFO] Siamese Network: Match 99.9%
+[INFO] No deviations detected.
+[INFO] Polling interval: 100ms""", language="bash")
+        elif st.session_state.visual_state == "hacked":
+            st.code("""[ALERT] Siamese Network: Match 12.4%
+[CRITICAL] Visual deviation > Threshold
+[ACTION] Triggering Kubernetes Rollback
+[ACTION] Locking IP 102.44.x.x
+[LOG] Evidence hashed to Blockchain""", language="bash")
+
+# --- 3. FINANCIAL SENTINEL ---
+elif mode == "💸 Financial Sentinel (Bank)":
+    st.subheader("💳 Transaction Anomaly Detection (The 'Mullot' Defense)")
+    
+    st.markdown("Use the controls to simulate a transaction. Watch the **Risk Score** change in real-time.")
+    
+    col_input, col_output = st.columns(2)
+    
+    with col_input:
+        amount = st.slider("Transaction Amount (KES)", 0, 1000000, 5000)
+        tx_time = st.slider("Time of Day (24h)", 0, 23, 14)
+        location = st.selectbox("Location", ["Nairobi (Home)", "Mombasa (Known)", "Bomet (New/Anomalous)", "International (High Risk)"])
+        sim_swap = st.checkbox("Simulate Recent SIM Swap?")
+        
+    # AI Logic Simulation
+    risk_score = 10 # Base risk
+    
+    # Rule 1: Amount
+    if amount > 100000: risk_score += 30
+    if amount > 500000: risk_score += 40
+    
+    # Rule 2: Time (3 AM Anomaly)
+    if tx_time < 5 or tx_time > 23: risk_score += 20
+    
+    # Rule 3: Location
+    if location == "Bomet (New/Anomalous)": risk_score += 25
+    if location == "International (High Risk)": risk_score += 50
+    
+    # Rule 4: SIM Swap (The Kill Switch)
+    if sim_swap: risk_score = 99 # Instant block
+    
+    # Cap score
+    risk_score = min(risk_score, 100)
+    
+    with col_output:
+        st.markdown("### 🧠 AI Risk Assessment")
+        
+        # Dynamic Color
+        color = "green"
+        if risk_score > 50: color = "orange"
+        if risk_score > 85: color = "red"
+        
+        st.markdown(f"""
+        <div style="text-align: center; font-size: 3rem; font-weight: bold; color: {color}; border: 2px solid {color}; border-radius: 10px; padding: 20px;">
+            {risk_score}/100
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("**Decision:**")
+        if risk_score < 50:
+            st.success("✅ **APPROVE**: Transaction looks normal.")
+        elif risk_score < 85:
+            st.warning("⚠️ **CHALLENGE**: Circuit Breaker Triggered. Video Liveness Check Required.")
+        else:
+            st.error("🚫 **BLOCK**: Critical Threat. Account Frozen. Telco Mismatch.")
+
+# --- 4. DURESS PROTOCOL ---
+elif mode == "🚨 Duress Protocol (Citizen)":
+    st.subheader("🆘 Autonomous Duress Response")
+    
+    col1, col2 = st.columns(2)
+    
     with col1:
-        st.image("https://placehold.co/600x150/green/white?text=SECURE:+OFFICIAL+GOVERNMENT+PORTAL", caption="Restored Live View: 09:45:06 AM")
-    
-    time.sleep(1)
-
-    # Final Impact
-    impact_status.success("🛡️ SOVEREIGNTY RESTORED IN <1 SECOND.")
-    st.toast("Sovereign Defense: Attack Neutralized")
+        st.markdown("#### 📱 Banking App Simulation")
+        st.info("You are being forced to withdraw money. Enter your PIN.")
+        
+        pin_input = st.text_input("Enter PIN (Try 1234 for Normal, 9999 for Duress)", type="password", max_chars=4)
+        
+        if st.button("Submit PIN"):
+            if pin_input == "1234":
+                st.success("✅ Login Successful. Welcome, John.")
+            elif pin_input == "9999":
+                # THE TRICK
+                st.success("✅ Login Successful. Welcome, John.") 
+                st.balloons() # Fake success visual
+                
+                # THE REALITY
+                with col2:
+                    st.error("🚨 DURESS SIGNAL DETECTED [SILENT]")
+                    st.markdown("**Autonomous Actions Executed:**")
+                    st.code("""
+1. [GPS] Lat: -1.2921, Lon: 36.8219
+2. [API] POST /police/alert (CODE RED)
+3. [API] POST /mpesa/freeze_target
+4. [LOG] Evidence #D-99182 created on Blockchain
+                    """, language="json")
+                    
+                    st.map(pd.DataFrame({'lat': [-1.2921], 'lon': [36.8219]}))
+                    st.caption("Live Tracking sent to DCI/Police HQ")
+            else:
+                st.warning("Incorrect PIN")
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("© 2025 Ulinzi-AI | Powered by Agentic AI & Zero-Trust Architecture")
+st.markdown("© 2025 Ulinzi-AI | **National Cyber-Intelligence & Prevention Platform**")
