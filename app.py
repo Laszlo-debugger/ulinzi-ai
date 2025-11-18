@@ -3,10 +3,17 @@ import time
 import pandas as pd
 import numpy as np
 import pydeck as pdk
-import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import random
+
+# Try to import Plotly with fallback
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("Plotly not available - using simplified visualizations")
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -149,8 +156,77 @@ st.markdown("""
     .sidebar .sidebar-content {
         background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
     }
+    
+    /* Custom gauge styles for fallback */
+    .gauge-container {
+        width: 100%;
+        background: #1a1a1a;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+    }
+    
+    .gauge-fill {
+        height: 20px;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# --- Helper functions for fallback visualizations ---
+def create_simple_gauge(risk_score):
+    """Create a simple gauge visualization without Plotly"""
+    color = "#00cc96"
+    if risk_score > 50: color = "#FF9800"
+    if risk_score > 85: color = "#ff4b4b"
+    
+    html = f"""
+    <div class="gauge-container">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span style="color: #aaa;">0</span>
+            <span style="color: white; font-size: 1.5rem; font-weight: bold;">{risk_score}/100</span>
+            <span style="color: #aaa;">100</span>
+        </div>
+        <div style="background: #333; border-radius: 10px; height: 20px;">
+            <div class="gauge-fill" style="width: {risk_score}%; background: {color};"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+            <span style="color: #00cc96;">Low</span>
+            <span style="color: #FF9800;">Medium</span>
+            <span style="color: #ff4b4b;">High</span>
+        </div>
+    </div>
+    """
+    return html
+
+def create_simple_pie_chart(threat_counts):
+    """Create a simple pie chart visualization without Plotly"""
+    total = sum(threat_counts.values)
+    html = '<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">'
+    
+    color_map = {
+        'low': '#00cc96',
+        'medium': '#FF9800', 
+        'high': '#ff4b4b',
+        'critical': '#b71c1c'
+    }
+    
+    for level, count in threat_counts.items():
+        percentage = (count / total) * 100
+        html += f"""
+        <div style="text-align: center; margin: 10px;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: {color_map.get(level, '#666')}; 
+                        display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                {percentage:.0f}%
+            </div>
+            <div style="margin-top: 5px; font-size: 0.8rem; color: #aaa;">
+                {level.title()}<br>({count})
+            </div>
+        </div>
+        """
+    html += '</div>'
+    return html
 
 # --- Session State Init ---
 if 'visual_state' not in st.session_state:
@@ -343,25 +419,31 @@ if mode == "Dashboard Overview":
     with col_analytics:
         st.subheader("📊 Threat Analytics")
         
-        # Threat distribution pie chart
+        # Threat distribution
         threat_counts = threat_df['threat_level'].value_counts()
-        fig_pie = px.pie(
-            values=threat_counts.values, 
-            names=threat_counts.index,
-            color=threat_counts.index,
-            color_discrete_map={
-                'low': '#00cc96', 
-                'medium': '#FF9800', 
-                'high': '#ff4b4b', 
-                'critical': '#b71c1c'
-            }
-        )
-        fig_pie.update_layout(
-            showlegend=True,
-            margin=dict(l=20, r=20, t=30, b=20),
-            height=250
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        
+        if PLOTLY_AVAILABLE:
+            # Use Plotly if available
+            fig_pie = px.pie(
+                values=threat_counts.values, 
+                names=threat_counts.index,
+                color=threat_counts.index,
+                color_discrete_map={
+                    'low': '#00cc96', 
+                    'medium': '#FF9800', 
+                    'high': '#ff4b4b', 
+                    'critical': '#b71c1c'
+                }
+            )
+            fig_pie.update_layout(
+                showlegend=True,
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=250
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            # Use fallback visualization
+            st.markdown(create_simple_pie_chart(threat_counts), unsafe_allow_html=True)
         
         # Recent alerts
         st.markdown("**Recent Alerts:**")
@@ -546,30 +628,34 @@ elif mode == "💸 Financial Sentinel (Bank)":
             color = "#ff4b4b"
             decision = "🚫 BLOCK"
         
-        # Gauge chart
-        fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta",
-            value = risk_score,
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Risk Score", 'font': {'size': 24}},
-            delta = {'reference': 50},
-            gauge = {
-                'axis': {'range': [None, 100], 'tickwidth': 1},
-                'bar': {'color': color},
-                'steps': [
-                    {'range': [0, 30], 'color': "lightgray"},
-                    {'range': [30, 70], 'color': "gray"},
-                    {'range': [70, 100], 'color': "darkgray"}
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': 90
+        if PLOTLY_AVAILABLE:
+            # Use Plotly gauge if available
+            fig = go.Figure(go.Indicator(
+                mode = "gauge+number+delta",
+                value = risk_score,
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                title = {'text': "Risk Score", 'font': {'size': 24}},
+                delta = {'reference': 50},
+                gauge = {
+                    'axis': {'range': [None, 100], 'tickwidth': 1},
+                    'bar': {'color': color},
+                    'steps': [
+                        {'range': [0, 30], 'color': "lightgray"},
+                        {'range': [30, 70], 'color': "gray"},
+                        {'range': [70, 100], 'color': "darkgray"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': 90
+                    }
                 }
-            }
-        ))
-        fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
-        st.plotly_chart(fig, use_container_width=True)
+            ))
+            fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            # Use fallback gauge
+            st.markdown(create_simple_gauge(risk_score), unsafe_allow_html=True)
         
         st.markdown(f"**AI Decision:** {decision}")
         
