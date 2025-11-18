@@ -13,7 +13,6 @@ try:
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
-    st.warning("Plotly not available - using simplified visualizations")
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -45,7 +44,7 @@ st.markdown("""
     
     .sub-header {
         font-size: 1.4rem; 
-        color: #666; 
+        color: #aaa; 
         text-align: center; 
         margin-bottom: 2rem;
         font-weight: 400;
@@ -76,13 +75,13 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     
-    .metric-danger {
+    .metric-danger .metric-val {
         background: linear-gradient(135deg, #ff4b4b 0%, #b71c1c 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     
-    .metric-warning {
+    .metric-warning .metric-val {
         background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -101,6 +100,7 @@ st.markdown("""
         padding: 0.75rem;
         background: linear-gradient(135deg, #1E88E5 0%, #0D47A1 100%);
         border: none;
+        color: white;
         transition: all 0.3s ease;
     }
     
@@ -108,18 +108,6 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(30, 136, 229, 0.4);
     }
-    
-    .attack-button {
-        background: linear-gradient(135deg, #ff4b4b 0%, #b71c1c 100%) !important;
-    }
-    
-    .attack-button:hover {
-        box-shadow: 0 5px 15px rgba(255, 75, 75, 0.4) !important;
-    }
-    
-    .risk-high {color: #ff4b4b; font-weight: bold;}
-    .risk-medium {color: #FF9800; font-weight: bold;}
-    .risk-low {color: #00cc96; font-weight: bold;}
     
     .module-card {
         background: rgba(30, 30, 30, 0.7);
@@ -136,6 +124,8 @@ st.markdown("""
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
+        text-align: center;
+        font-weight: bold;
         animation: pulse 2s infinite;
     }
     
@@ -151,10 +141,8 @@ st.markdown("""
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
-    }
-    
-    .sidebar .sidebar-content {
-        background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+        text-align: center;
+        font-weight: bold;
     }
     
     /* Custom gauge styles for fallback */
@@ -174,7 +162,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Helper functions for fallback visualizations ---
+# --- Helper functions ---
 def create_simple_gauge(risk_score):
     """Create a simple gauge visualization without Plotly"""
     color = "#00cc96"
@@ -200,61 +188,6 @@ def create_simple_gauge(risk_score):
     """
     return html
 
-def create_simple_pie_chart(threat_counts):
-    """Create a simple pie chart visualization without Plotly"""
-    total = sum(threat_counts.values)
-    html = '<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">'
-    
-    color_map = {
-        'low': '#00cc96',
-        'medium': '#FF9800', 
-        'high': '#ff4b4b',
-        'critical': '#b71c1c'
-    }
-    
-    for level, count in threat_counts.items():
-        percentage = (count / total) * 100
-        html += f"""
-        <div style="text-align: center; margin: 10px;">
-            <div style="width: 60px; height: 60px; border-radius: 50%; background: {color_map.get(level, '#666')}; 
-                        display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                {percentage:.0f}%
-            </div>
-            <div style="margin-top: 5px; font-size: 0.8rem; color: #aaa;">
-                {level.title()}<br>({count})
-            </div>
-        </div>
-        """
-    html += '</div>'
-    return html
-
-# --- Session State Init ---
-if 'visual_state' not in st.session_state:
-    st.session_state.visual_state = "secure"  # secure, hacked, restoring
-if 'audit_log' not in st.session_state:
-    st.session_state.audit_log = []
-if 'threat_data' not in st.session_state:
-    st.session_state.threat_data = []
-if 'financial_data' not in st.session_state:
-    st.session_state.financial_data = []
-if 'system_status' not in st.session_state:
-    st.session_state.system_status = {
-        "sovereign_sentinel": "🟢 ACTIVE",
-        "financial_sentinel": "🟢 ACTIVE", 
-        "duress_protocol": "🟢 ACTIVE",
-        "intelligence_core": "🟢 ACTIVE"
-    }
-
-# --- Helper Functions ---
-def add_log(event_type, message, status="INFO"):
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    st.session_state.audit_log.insert(0, {
-        "time": timestamp, 
-        "type": event_type, 
-        "msg": message, 
-        "status": status
-    })
-
 def generate_threat_data():
     """Generate simulated threat intelligence data"""
     threats = []
@@ -271,24 +204,45 @@ def generate_threat_data():
 def generate_financial_data():
     """Generate simulated financial transaction data"""
     transactions = []
-    for i in range(100):
+    for i in range(10):
         risk = random.randint(1, 100)
-        status = "APPROVED" if risk < 30 else "FLAGGED" if risk < 70 else "BLOCKED"
+        status = "APPROVED" if risk < 50 else "FLAGGED" if risk < 85 else "BLOCKED"
         transactions.append({
-            "time": (datetime.now() - timedelta(minutes=random.randint(1, 1440))).strftime("%H:%M"),
-            "amount": random.randint(1000, 500000),
-            "location": random.choice(["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret"]),
-            "risk_score": risk,
-            "status": status,
-            "type": random.choice(["Transfer", "Withdrawal", "Deposit", "Payment"])
+            "Time": (datetime.now() - timedelta(minutes=random.randint(1, 1440))).strftime("%H:%M"),
+            "Amount (KES)": f"{random.randint(1000, 500000):,}",
+            "Location": random.choice(["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret"]),
+            "Risk Score": risk,
+            "Status": status,
+            "Type": random.choice(["Transfer", "Withdrawal", "Deposit", "Payment"])
         })
     return transactions
 
-# Initialize data
-if not st.session_state.threat_data:
+# --- Session State Init ---
+if 'visual_state' not in st.session_state:
+    st.session_state.visual_state = "secure"  # secure, hacked, restoring
+if 'audit_log' not in st.session_state:
+    st.session_state.audit_log = []
+if 'threat_data' not in st.session_state:
     st.session_state.threat_data = generate_threat_data()
-if not st.session_state.financial_data:
+if 'financial_data' not in st.session_state:
     st.session_state.financial_data = generate_financial_data()
+if 'system_status' not in st.session_state:
+    st.session_state.system_status = {
+        "sovereign_sentinel": "🟢 ACTIVE",
+        "financial_sentinel": "🟢 ACTIVE", 
+        "duress_protocol": "🟢 ACTIVE",
+        "intelligence_core": "🟢 ACTIVE"
+    }
+
+# --- Helper function for logs ---
+def add_log(event_type, message, status="INFO"):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    st.session_state.audit_log.insert(0, {
+        "time": timestamp, 
+        "type": event_type, 
+        "msg": message, 
+        "status": status
+    })
 
 # --- Header ---
 st.markdown('<div class="main-header">🛡️ ULINZI-AI</div>', unsafe_allow_html=True)
@@ -304,13 +258,13 @@ mode = st.sidebar.selectbox("Select Operation Mode",
 
 st.sidebar.divider()
 
-# System Status
+# System Status Sidebar
 st.sidebar.subheader("System Status")
 for module, status in st.session_state.system_status.items():
     st.sidebar.markdown(f"**{module.replace('_', ' ').title()}:** {status}")
 
 st.sidebar.divider()
-st.sidebar.info("💡 **Tip for Judges:** Use the controls to trigger threats and watch the AI respond autonomously in real-time.")
+st.sidebar.info("💡 **Tip for Judges:** Use the controls in the main window to trigger threats and watch the AI respond autonomously.")
 
 # --- 1. DASHBOARD OVERVIEW ---
 if mode == "Dashboard Overview":
@@ -402,10 +356,11 @@ if mode == "Dashboard Overview":
                     data=threat_df,
                     get_position='[lon, lat]',
                     get_color='color',
-                    get_radius=50000,
-                    radius_min_pixels=3,
-                    radius_max_pixels=10,
-                    pickable=True
+                    get_radius=20000,
+                    radius_min_pixels=5,
+                    radius_max_pixels=15,
+                    pickable=True,
+                    filled=True
                 ),
             ],
             tooltip={
@@ -438,18 +393,19 @@ if mode == "Dashboard Overview":
             fig_pie.update_layout(
                 showlegend=True,
                 margin=dict(l=20, r=20, t=30, b=20),
-                height=250
+                height=250,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
             )
             st.plotly_chart(fig_pie, use_container_width=True)
         else:
-            # Use fallback visualization
-            st.markdown(create_simple_pie_chart(threat_counts), unsafe_allow_html=True)
+            st.warning("Plotly not detected. Using simplified view.")
         
-        # Recent alerts
-        st.markdown("**Recent Alerts:**")
-        recent_alerts = threat_df.nlargest(5, 'timestamp')
+        st.markdown("**Recent Critical Alerts:**")
+        recent_alerts = threat_df[threat_df['threat_level'] == 'critical'].head(3)
         for _, alert in recent_alerts.iterrows():
-            st.write(f"• {alert['type']} - **{alert['threat_level'].upper()}**")
+            st.error(f"🚨 {alert['type']} Detected")
 
 # --- 2. SOVEREIGN VISUAL SENTINEL ---
 elif mode == "⚔️ Sovereign Sentinel (Gov)":
@@ -471,28 +427,18 @@ elif mode == "⚔️ Sovereign Sentinel (Gov)":
             st.image("https://placehold.co/800x400/2E7D32/FFF?text=MINISTRY+OF+INTERIOR%0AOfficial+Secure+Portal%0A%0A🛡️+ULINZI-AI+PROTECTED", 
                     caption="Status: SECURE (Gold Standard Match 99.9%) - Siamese Neural Network Active")
             
-            col_attack, col_reset = st.columns(2)
-            with col_attack:
-                if st.button("🔴 SIMULATE COORDINATED CYBERATTACK", key="attack_btn", use_container_width=True):
-                    st.session_state.visual_state = "hacked"
-                    add_log("SOVEREIGN_SENTINEL", "Visual anomaly detected - Ministry of Interior website", "CRITICAL")
-                    st.rerun()
+            if st.button("🔴 SIMULATE CYBERATTACK (Inject Defacement)", key="attack_btn", use_container_width=True):
+                st.session_state.visual_state = "hacked"
+                add_log("SOVEREIGN_SENTINEL", "Visual anomaly detected - Ministry of Interior website", "CRITICAL")
+                st.rerun()
             
         elif st.session_state.visual_state == "hacked":
             st.image("https://placehold.co/800x400/B71C1C/FFF?text=HACKED+BY+ANONYMOUS%0AGovernment+Systems+Compromised%0A%0A⚠️+NATIONAL+SECURITY+THREAT", 
                     caption="Status: COMPROMISED (Visual Anomaly Detected - 12.4% Match)")
             
-            # Auto-Revert Simulation with enhanced visualization
+            # Auto-Revert Simulation
             progress_bar = st.progress(0)
             status_text = st.empty()
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Response Time", "142ms", delta="Autonomous")
-            with col2:
-                st.metric("Threat Level", "CRITICAL", delta="Defacement")
-            with col3:
-                st.metric("AI Confidence", "99.7%", delta="High")
             
             status_text.error("🚨 VISUAL ANOMALY DETECTED! AI AGENT ACTIVATED.")
             
@@ -505,11 +451,12 @@ elif mode == "⚔️ Sovereign Sentinel (Gov)":
                     status_text.info(f"🔄 Initiating Kubernetes rollback: {i}%")
                 else:
                     status_text.info(f"✅ Restoring secure snapshot: {i}%")
-                time.sleep(0.02)
+                time.sleep(0.03)
             
             status_text.success("✅ AUTONOMOUS RECOVERY COMPLETE - Threat Neutralized")
             st.session_state.visual_state = "restoring"
             add_log("SOVEREIGN_SENTINEL", "Autonomous hot-swap completed - Site restored", "SUCCESS")
+            time.sleep(1)
             st.rerun()
             
         elif st.session_state.visual_state == "restoring":
@@ -525,19 +472,16 @@ elif mode == "⚔️ Sovereign Sentinel (Gov)":
     with col_log:
         st.markdown("### 🧠 Autonomous Agent Logic")
         
-        # Enhanced log display
-        log_container = st.container()
-        with log_container:
-            if st.session_state.visual_state == "secure":
-                st.code("""[INFO] Siamese Neural Network: Active
+        if st.session_state.visual_state == "secure":
+            st.code("""[INFO] Siamese Neural Network: Active
 [INFO] Gold Standard Match: 99.9% 
 [INFO] Monitoring 47 critical domains
 [INFO] Polling interval: 100ms
 [INFO] Last health check: 12ms ago
 [INFO] All systems nominal""", language="bash")
-            
-            elif st.session_state.visual_state == "hacked":
-                st.code("""[ALERT] Visual deviation detected!
+        
+        elif st.session_state.visual_state == "hacked":
+            st.code("""[ALERT] Visual deviation detected!
 [CRITICAL] Siamese Network Match: 12.4%
 [ACTION] Triggering autonomous response
 [ACTION] Kubernetes: Initiating hot-swap
@@ -545,28 +489,19 @@ elif mode == "⚔️ Sovereign Sentinel (Gov)":
 [ACTION] Evidence hashed to blockchain
 [ACTION] NC4 alert dispatched
 [STATUS] Recovery in progress...""", language="bash")
-            
-            else:  # restoring
-                st.code("""[SUCCESS] Autonomous recovery complete
+        
+        else:  # restoring
+            st.code("""[SUCCESS] Autonomous recovery complete
 [INFO] Recovery time: 487ms
 [INFO] Zero downtime achieved
 [INFO] Public access maintained
 [INFO] Threat intelligence updated
 [INFO] Returning to monitoring mode
 [INFO] All systems secure""", language="bash")
-        
-        st.divider()
-        st.markdown("### 📈 System Metrics")
-        col_metric1, col_metric2 = st.columns(2)
-        with col_metric1:
-            st.metric("Domains Protected", "47", "All Critical")
-        with col_metric2:
-            st.metric("Uptime", "100%", "30 days")
 
 # --- 3. FINANCIAL SENTINEL ---
 elif mode == "💸 Financial Sentinel (Bank)":
     st.subheader("💳 Financial Sentinel - Real-time Fraud Detection & Prevention")
-    
     st.markdown("Simulate transactions to test the AI's real-time anomaly detection capabilities.")
     
     col_input, col_output = st.columns(2)
@@ -580,40 +515,28 @@ elif mode == "💸 Financial Sentinel (Bank)":
         sim_swap = st.checkbox("🔴 SIM Swap Detected (Telco API)")
         behavioral_anomaly = st.checkbox("🎭 Behavioral Anomaly (Unusual Pattern)")
         
+        # AI Logic Calculation (Reactive)
+        risk_score = 15
+        if amount > 50000: risk_score += 15
+        if amount > 200000: risk_score += 25
+        if amount > 500000: risk_score += 35
+        if tx_time < 5 or tx_time > 23: 
+            risk_score += 25
+            if location == "3 AM Anomaly": risk_score += 30
+        if location == "Bomet (New/Anomalous)": risk_score += 20
+        if location == "International (High Risk)": risk_score += 35
+        if behavioral_anomaly: risk_score += 25
+        if sim_swap: risk_score = 99
+        risk_score = min(risk_score, 100)
+
         if st.button("🚀 Process Transaction", use_container_width=True):
-            add_log("FINANCIAL_SENTINEL", f"Processing KES {amount:,} transaction", "INFO")
-    
-    # Advanced AI Logic Simulation
-    risk_score = 15  # Base risk
-    
-    # Rule 1: Amount-based risk
-    if amount > 50000: risk_score += 15
-    if amount > 200000: risk_score += 25
-    if amount > 500000: risk_score += 35
-    
-    # Rule 2: Time-based anomalies (3 AM circuit breaker)
-    if tx_time < 5 or tx_time > 23: 
-        risk_score += 25
-        if location == "3 AM Anomaly":
-            risk_score += 30
-    
-    # Rule 3: Location intelligence
-    if location == "Bomet (New/Anomalous)": risk_score += 20
-    if location == "International (High Risk)": risk_score += 35
-    
-    # Rule 4: SIM Swap (Instant block)
-    if sim_swap: 
-        risk_score = 99  # Instant block
-    
-    # Rule 5: Behavioral analytics
-    if behavioral_anomaly: risk_score += 25
-    
-    # Rule 6: Graph Neural Network detection
-    if amount > 300000 and location == "International (High Risk)":
-        risk_score += 20  # Potential money laundering pattern
-    
-    # Cap score
-    risk_score = min(risk_score, 100)
+            add_log("FINANCIAL_SENTINEL", f"Processing KES {amount:,} transaction. Risk Score: {risk_score}", "INFO")
+            if risk_score > 85:
+                st.toast("Transaction BLOCKED due to High Risk", icon="🚫")
+            elif risk_score > 50:
+                st.toast("Circuit Breaker Triggered: Verification Required", icon="⚠️")
+            else:
+                st.toast("Transaction Approved", icon="✅")
     
     with col_output:
         st.markdown("#### 🧠 AI Risk Assessment Engine")
@@ -629,94 +552,65 @@ elif mode == "💸 Financial Sentinel (Bank)":
             decision = "🚫 BLOCK"
         
         if PLOTLY_AVAILABLE:
-            # Use Plotly gauge if available
             fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
+                mode = "gauge+number",
                 value = risk_score,
                 domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Risk Score", 'font': {'size': 24}},
-                delta = {'reference': 50},
+                title = {'text': "Risk Score", 'font': {'size': 24, 'color': 'white'}},
                 gauge = {
-                    'axis': {'range': [None, 100], 'tickwidth': 1},
+                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
                     'bar': {'color': color},
+                    'bgcolor': "white",
+                    'borderwidth': 2,
+                    'bordercolor': "gray",
                     'steps': [
-                        {'range': [0, 30], 'color': "lightgray"},
-                        {'range': [30, 70], 'color': "gray"},
-                        {'range': [70, 100], 'color': "darkgray"}
+                        {'range': [0, 50], 'color': 'rgba(0, 204, 150, 0.3)'},
+                        {'range': [50, 85], 'color': 'rgba(255, 152, 0, 0.3)'},
+                        {'range': [85, 100], 'color': 'rgba(255, 75, 75, 0.3)'}
                     ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 90
-                    }
                 }
             ))
-            fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=300)
             st.plotly_chart(fig, use_container_width=True)
         else:
-            # Use fallback gauge
             st.markdown(create_simple_gauge(risk_score), unsafe_allow_html=True)
         
-        st.markdown(f"**AI Decision:** {decision}")
+        st.markdown(f"<h3 style='text-align: center; color: {color};'>{decision}</h3>", unsafe_allow_html=True)
         
-        # Detailed reasoning
-        st.markdown("#### 🔍 Detection Logic")
-        if risk_score < 50:
-            st.success("""
-            **Normal Transaction Pattern:**
-            - Amount within expected range
-            - Location matches user history
-            - No behavioral anomalies detected
-            - Telco verification: PASSED
-            """)
-        elif risk_score < 85:
-            st.warning("""
-            **Suspicious Pattern Detected:**
-            - Circuit breaker activated
-            - Video liveness check required
-            - Secondary authentication needed
-            - Transaction held for review
-            """)
-        else:
+        if risk_score > 85:
             st.error("""
             **Critical Threat Identified:**
-            - SIM swap confirmed via telco API
+            - SIM swap / Anomaly confirmed via telco API
             - Account immediately frozen
             - Law enforcement notified
-            - Chain analysis initiated
             """)
+            if st.checkbox("Show Liveness Check"):
+                st.image("https://placehold.co/400x300/000000/FFF?text=Live+Face+Scan+Required", caption="Biometric Challenge Active")
 
-    # Transaction history
     st.divider()
-    st.subheader("📋 Recent Transaction Monitoring")
-    
-    # Display recent transactions
-    recent_tx = pd.DataFrame(st.session_state.financial_data[-10:])
-    st.dataframe(recent_tx, use_container_width=True)
+    st.subheader("📋 Recent Transaction Logs")
+    st.dataframe(pd.DataFrame(st.session_state.financial_data), use_container_width=True)
 
 # --- 4. DURESS PROTOCOL ---
 elif mode == "🚨 Duress Protocol (Citizen)":
     st.subheader("🆘 Autonomous Duress Response System")
-    
     st.info("This system protects citizens during physical threats by enabling covert emergency signaling.")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("#### 📱 Banking App Simulation")
-        st.markdown("You are being forced to withdraw money under duress.")
+        st.markdown("You are being forced to withdraw money. **Test the logic:**")
+        st.markdown("- **Normal PIN:** `1234`")
+        st.markdown("- **Duress PIN:** `9999` (Triggers Alarm)")
         
-        # Enhanced PIN input with instructions
-        st.markdown("**Normal PIN:** `1234` | **Duress PIN:** `9999`")
-        pin_input = st.text_input("Enter PIN", type="password", max_chars=4, 
-                                 placeholder="Enter 4-digit PIN")
-        
+        pin_input = st.text_input("Enter PIN", type="password", max_chars=4, placeholder="Enter 4-digit PIN")
         amount = st.slider("Withdrawal Amount (KES)", 1000, 500000, 50000)
         
         if st.button("Process Withdrawal", use_container_width=True):
             if pin_input == "1234":
                 st.success("✅ Transaction Successful")
-                st.info("KES {:,.0f} has been withdrawn.".format(amount))
+                st.info(f"KES {amount:,} has been withdrawn.")
             elif pin_input == "9999":
                 # THE COVERT RESPONSE
                 st.success("✅ Transaction Appears Successful") 
@@ -725,108 +619,56 @@ elif mode == "🚨 Duress Protocol (Citizen)":
                 # THE REAL AUTONOMOUS RESPONSE
                 with col2:
                     st.markdown('<div class="alert-banner">🚨 SILENT DURESS SIGNAL DETECTED</div>', unsafe_allow_html=True)
-                    
                     st.markdown("**Autonomous Emergency Protocol Activated:**")
                     
-                    # Response steps
-                    steps = st.container()
-                    with steps:
-                        col_step1, col_step2, col_step3, col_step4 = st.columns(4)
-                        with col_step1:
-                            st.metric("Step 1", "GPS Tracking", "ACTIVE")
-                        with col_step2:
-                            st.metric("Step 2", "Police Alert", "SENT")
-                        with col_step3:
-                            st.metric("Step 3", "Funds Frozen", "EXECUTED")
-                        with col_step4:
-                            st.metric("Step 4", "Evidence Log", "SECURED")
+                    with st.status("Executing Code Red Protocol...", expanded=True):
+                        time.sleep(1)
+                        st.write("📍 GPS Triangulation... **[Locked: -1.2921, 36.8219]**")
+                        time.sleep(0.5)
+                        st.write("🚓 Alerting National Police Service... **[SENT]**")
+                        time.sleep(0.5)
+                        st.write("💸 Freezing Recipient Account... **[EXECUTED]**")
+                        time.sleep(0.5)
+                        st.write("🔗 Immutable Evidence Log... **[HASHED]**")
                     
-                    st.code("""
-// AUTONOMOUS ACTIONS EXECUTED
-1. [GPS] Location: -1.2921, 36.8219 (Nairobi CBD)
-2. [API] POST /nc4/alert (CODE_RED: Armed robbery)
-3. [API] POST /mpesa/freeze?target=254712345678
-4. [BLOCKCHAIN] Log #D-99182 created (Immutable)
-5. [AUDIT] Full session recorded for investigation
-6. [COMMS] Silent alert to DCI/Police dispatch
-                    """, language="json")
-                    
-                    # Live tracking map
-                    st.map(pd.DataFrame({'lat': [-1.2921], 'lon': [36.8219]}), zoom=15)
-                    st.caption("📍 Real-time location tracking active - DCI Dispatch notified")
-                    
-                    # Evidence chain
-                    st.markdown("#### 🔗 Digital Evidence Chain")
-                    st.info("""
-                    **Blockchain Verification:**
-                    - Timestamp: {:%Y-%m-%d %H:%M:%S}
-                    - Transaction ID: TX-{}-DURESS
-                    - GPS Coordinates: -1.2921, 36.8219
-                    - Police Case: #DCI-2024-99182
-                    - Status: ACTIVE RESPONSE
-                    """.format(datetime.now(), random.randint(10000, 99999)))
+                    st.map(pd.DataFrame({'lat': [-1.2921], 'lon': [36.8219]}), zoom=14)
+                    st.caption("Live Tracking sent to DCI/Police HQ")
             else:
                 st.warning("Incorrect PIN. Please try again.")
 
 # --- 5. INTELLIGENCE CORE ---
 elif mode == "🔍 Intelligence Core":
     st.subheader("🔍 Intelligence Core - Attribution & Threat Analysis")
-    
     st.markdown("Advanced AI-powered attribution and threat intelligence analysis.")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("#### 🌐 Chain Analysis Engine")
-        
-        # Simulated attack chain visualization
         attack_data = pd.DataFrame({
             'Stage': ['Initial Access', 'Lateral Movement', 'Data Exfiltration', 'Financial Transfer', 'Money Laundering'],
             'Time': ['14:30:02', '14:35:18', '14:41:45', '14:50:22', '15:15:10'],
             'Confidence': [85, 92, 78, 95, 88],
             'Status': ['Detected', 'Detected', 'Prevented', 'Tracked', 'Monitoring']
         })
-        
         st.dataframe(attack_data, use_container_width=True)
         
-        # Attribution analysis
         st.markdown("#### 🎯 Attribution Analysis")
-        st.metric("Attribution Confidence", "94%", "High")
-        st.metric("Threat Actor", "APT-41", "Known Group")
-        st.metric("Infrastructure", "Residential Proxies", "Botnet")
+        col_att1, col_att2, col_att3 = st.columns(3)
+        col_att1.metric("Confidence", "94%", "High")
+        col_att2.metric("Actor", "APT-41", "Known")
+        col_att3.metric("Method", "Res-Proxy", "Botnet")
         
     with col2:
-        st.markdown("#### 📈 Threat Intelligence")
-        
-        # Threat timeline
-        timeline_data = pd.DataFrame({
-            'Event': ['SIM Swap Attempt', 'Mule Account Created', 'Lateral Movement', 'Data Exfiltration', 'Funds Transfer'],
-            'Timestamp': ['14:30', '14:45', '15:00', '15:15', '15:30'],
-            'Risk': ['High', 'Medium', 'High', 'Critical', 'High']
-        })
-        
-        st.dataframe(timeline_data, use_container_width=True)
-        
-        # Graph network visualization placeholder
         st.markdown("#### 🕸️ Transaction Network Analysis")
         st.image("https://placehold.co/600x300/1a1a1a/FFFFFF?text=Graph+Neural+Network+Analysis%0AIdentifying+Money+Laundering+Patterns", 
                 caption="GNN identifying funnel accounts across banking network")
 
-# --- System Footer ---
+# --- Main Footer ---
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Network Status:**")
 st.sidebar.markdown("✅ **USSD Gateway (*334#)**: Connected")
 st.sidebar.markdown("✅ **Mobile App API**: Connected")
 st.sidebar.markdown("✅ **Internet Banking**: Connected")
 st.sidebar.markdown("✅ **Telco Integration**: Active")
-st.sidebar.markdown("✅ **Blockchain Audit**: Live")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Threat Intelligence:**")
-st.sidebar.markdown("🟢 **NC4 Integration**: Active")
-st.sidebar.markdown("🟢 **BS-SOC Feed**: Live")
-st.sidebar.markdown("🟢 **International TI**: Connected")
-
-# --- Main Footer ---
 st.markdown("---")
 st.markdown("© 2025 Ulinzi-AI | **National Cyber-Intelligence & Prevention Platform** | Protecting Kenya's Digital Sovereignty")
